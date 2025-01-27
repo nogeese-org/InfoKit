@@ -30,9 +30,10 @@ download_and_install() {
     chmod +x "$install_dir/bin/$bin_file"
 
     # Initialize the master directory
-    curl -sSL "$GITHUB_RAW_REPO/$INFOSTACK_DIR/master/infostack.sh" -o "$master_dir/infostack.sh"
-    echo "$GITHUB_RAW_REPO" > "$master_dir/source.txt"
-    echo "1.0.0" > "$master_dir/version.txt"
+    curl -sSL "$GITHUB_RAW_REPO/infostack.sh" -o "$master_dir/infostack.sh"
+    source $master_dir/infostack.sh
+    echo "$GITHUB_RAW_REPO/infostack.sh" > "$master_dir/source.txt"
+    echo "$INFOLATESTVERSION" > "$master_dir/version.txt"
 
     # For system-wide installation, move the binary to /usr/bin
     if [[ "$install_type" == "system-wide" ]]; then
