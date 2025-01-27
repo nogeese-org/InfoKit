@@ -3,7 +3,7 @@
 # Installer for InfoStack from raw.githubusercontent.com
 
 GITHUB_RAW_REPO="https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main"
-INFOSTACK_DIR="infostack"
+INFOSTACK_DIR="bin"
 SYSTEM_INSTALL_DIR="/usr/infostack"
 SYSTEM_MASTER_DIR="$SYSTEM_INSTALL_DIR/master"
 SYSTEM_BIN="/usr/bin/infostack"
@@ -26,7 +26,7 @@ download_and_install() {
     mkdir -p "$master_dir"
 
     # Download main script
-    curl -sSL "$GITHUB_RAW_REPO/$INFOSTACK_DIR/bin/$bin_file" -o "$install_dir/bin/$bin_file"
+    curl -sSL "$GITHUB_RAW_REPO/$INFOSTACK_DIR/$bin_file" -o "$install_dir/bin/$bin_file"
     chmod +x "$install_dir/bin/$bin_file"
 
     # Initialize the master directory
