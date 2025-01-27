@@ -47,6 +47,9 @@ download_and_install() {
         chmod -x "$USER_BIN"
     fi
 
+    # Install Core Packages after install.
+    infostack -S https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/infostack-core-group.sh
+    
     echo "InfoStack ($install_type) installed successfully!"
 }
 
