@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # InfoStack Core Source for updates.
 
 # Basic Info
