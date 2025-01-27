@@ -3,7 +3,7 @@
 Please have sudo access and run this:
 
 ```
-curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/infostack-syswideinstall.sh
+curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/infostack-syswideinstall.sh | sudo bash
 ```
 
 ## InfoStack
