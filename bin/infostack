@@ -154,7 +154,7 @@ update_infostack() {
     # Update infostack itself (located in master directory)
     log_message "Checking for update for infostack..."
     
-    infostack_manifest_url="https://example.com/infostack-manifest.sh"  # Replace with actual URL to infostack manifest
+    infostack_manifest_url="https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/infostacks/infostack/infostack.sh"
     remote_version=$(get_remote_version "$infostack_manifest_url")
     
     # Read the current version of infostack (can be stored in a file within the master directory)
