@@ -1,12 +1,12 @@
 # Nogeese InfoKit
 Nogeese InfoKit is a management kit with lots of features and Nogeese Linux will come with it preinstalled.
-## InfoStack
+### InfoStack
 A new way of managing packages and programs.
-## InfoPac
+### InfoPac
 Manages InfoStack packages, and installs them with URLs.
-## GZ
+### GZ
 Same as InfoPac, but like traditional package managers, it installs it from a repo. 
-## InfoOctopi (Coming soon)
+### InfoOctopi (Coming soon)
 Graphical InfoStack manager.
 ## Installation
 Needs CURL, run this:
