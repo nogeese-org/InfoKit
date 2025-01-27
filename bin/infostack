@@ -39,6 +39,60 @@ compare_versions() {
     fi
 }
 
+update_all_packages() {
+    # Iterate over all installed packages and check for updates
+    log_message "Checking for updates for all installed packages..."
+    
+    for pkg_dir in "$PKG_DIR"/*; do
+        if [[ -d "$pkg_dir" ]]; then
+            pkg_name=$(basename "$pkg_dir")
+            echo "Checking package: $pkg_name"
+
+            # Read the manifest URL for the package from source.txt
+            if [[ -f "$pkg_dir/source.txt" ]]; then
+                manifest_url=$(cat "$pkg_dir/source.txt")
+                remote_version=$(get_remote_version "$manifest_url")
+
+                # Read current version from version.txt
+                current_version=$(cat "$pkg_dir/version.txt")
+
+                # Compare the versions
+                compare_versions "$current_version" "$remote_version"
+                if [[ $? -eq 1 ]]; then
+                    echo "Updating package: $pkg_name"
+                    install_package "$manifest_url"
+                else
+                    echo "Package $pkg_name is up to date."
+                fi
+            else
+                echo "No source.txt found for package: $pkg_name"
+            fi
+        fi
+    done
+}
+
+update_infostack() {
+    # Check for InfoStack update
+    log_message "Checking for updates for InfoStack..."
+    if [[ -f "$MASTER_DIR/version.txt" && -f "$MASTER_DIR/source.txt" ]]; then
+        current_version=$(cat "$MASTER_DIR/version.txt")
+        manifest_url=$(cat "$MASTER_DIR/source.txt")
+        remote_version=$(get_remote_version "$manifest_url")
+        
+        compare_versions "$current_version" "$remote_version"
+        if [[ $? -eq 0 ]]; then
+            # New version is available
+            echo "InfoStack $current_version > $remote_version"
+            echo "Updating InfoStack, please do not operate..."
+            install_master_package $manifest_url
+        else
+            echo "InfoStack is up to date."
+        fi
+    else
+        echo "Metadata for InfoStack not found in $MASTER_DIR."
+    fi
+}
+
 install_package() {
     local manifest_url="$1"
     local pkg_name
@@ -118,55 +172,83 @@ install_package() {
     log_message "Installation of $pkg_name ($remote_version) completed."
 }
 
-update_all_packages() {
-    # Iterate over all installed packages and check for updates
-    log_message "Checking for updates for all installed packages..."
-    
-    for pkg_dir in "$PKG_DIR"/*; do
-        if [[ -d "$pkg_dir" ]]; then
-            pkg_name=$(basename "$pkg_dir")
-            echo "Checking package: $pkg_name"
+install_master_package() {
+    local manifest_url="$1"
+    local pkg_name
+    local latest_version
+    local current_version
+    local remote_version
+    local source_url
 
-            # Read the manifest URL for the package from source.txt
-            if [[ -f "$pkg_dir/source.txt" ]]; then
-                manifest_url=$(cat "$pkg_dir/source.txt")
-                remote_version=$(get_remote_version "$manifest_url")
+    log_message "Fetching manifest from: $manifest_url"
+    temp_manifest=$(mktemp)
+    curl -sSL "$manifest_url" -o "$temp_manifest"
+    source "$temp_manifest"
 
-                # Read current version from version.txt
-                current_version=$(cat "$pkg_dir/version.txt")
+    pkg_name="${INFOSOFTWARENAME}"
+    latest_version="${INFOLATESTVERSION}"
+    source_url="${INFOREPOSOURCE}"
 
-                # Compare the versions
-                compare_versions "$current_version" "$remote_version"
-                if [[ $? -eq 1 ]]; then
-                    echo "Updating package: $pkg_name"
-                    install_package "$manifest_url"
-                else
-                    echo "Package $pkg_name is up to date."
-                fi
-            else
-                echo "No source.txt found for package: $pkg_name"
-            fi
-        fi
-    done
-}
+    pkg_metadata_dir="$MASTER_DIR"
+    mkdir -p "$pkg_metadata_dir"
 
-update_infostack() {
-    # Update infostack itself (located in master directory)
-    log_message "Checking for update for infostack..."
-    
-    infostack_manifest_url="https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/infostacks/infostack/infostack.sh"
-    remote_version=$(get_remote_version "$infostack_manifest_url")
-    
-    # Read the current version of infostack (can be stored in a file within the master directory)
-    current_version=$(cat "$MASTER_DIR/version.txt")
+    # Read current version from version.txt if it exists
+    if [[ -f "$pkg_metadata_dir/version.txt" ]]; then
+        current_version=$(cat "$pkg_metadata_dir/version.txt")
+    else
+        current_version="0.0.0"  # Assuming it's the first installation
+    fi
 
+    # Fetch remote version by looking at the URL in source.txt
+    if [[ -f "$pkg_metadata_dir/source.txt" ]]; then
+        source_url=$(cat "$pkg_metadata_dir/source.txt")
+    else
+        log_message "Error: source.txt not found for $pkg_name"
+        return 1
+    fi
+
+    # Get the remote version
+    remote_version=$(get_remote_version "$source_url")
+
+    # Compare versions to check if an update is needed
     compare_versions "$current_version" "$remote_version"
     if [[ $? -eq 1 ]]; then
-        echo "Updating infostack to version $remote_version"
-        install_package "$infostack_manifest_url"
+        log_message "Update found! Current version: $current_version, Remote version: $remote_version"
     else
-        echo "Infostack is up to date."
+        log_message "No update needed. Current version: $current_version, Remote version: $remote_version"
+        return
     fi
+
+    # Proceed with installation if update is needed
+    log_message "Resolving dependencies for $pkg_name..."
+    for dep in "${DEPENDENCIES[@]}"; do
+        IFS=: read -r source_type source <<< "$dep"
+        case "$source_type" in
+            infopac) infopac -S "$source" ;;
+            gz) gz -S "$source" ;;
+            pacman) sudo pacman -S --needed --noconfirm "$source" ;;
+            manual)
+                echo "Please follow manual dependency instructions: $source"
+                ;;
+            *) echo "Unknown dependency type: $source_type" ;;
+        esac
+    done
+
+    if [[ "$INFOINSTALLABLE" == "true" ]]; then
+        temp_installer=$(mktemp)
+        curl -sSL "$INFOINSTALLERSOURCE" -o "$temp_installer"
+        chmod +x "$temp_installer"
+        bash "$temp_installer"
+        rm -f "$temp_installer"
+    fi
+
+    # Save the new version and source details
+    echo "$source_url" > "$pkg_metadata_dir/source.txt"
+    echo "$remote_version" > "$pkg_metadata_dir/version.txt"
+    cp "$temp_manifest" "$pkg_metadata_dir/infostack.sh"
+    rm -f "$temp_manifest"
+
+    log_message "Installation of $pkg_name ($remote_version) completed."
 }
 
 remove_package() {
