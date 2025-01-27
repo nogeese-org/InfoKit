@@ -4,7 +4,7 @@
 
 # Basic Info
 INFOTYPE=software
-INFOSOFTWARENAME=infokit
+INFOSOFTWARENAME=infokit-corestack
 INFOLATESTVERSION=0.06
 
 # Sources settings
