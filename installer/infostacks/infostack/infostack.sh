@@ -15,7 +15,7 @@ INFOREPOENABLE=false
 INFOPACKAGEENABLE=false
 
 # Sources
-INFOINSTALLERSOURCE=https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/syswideinstall.sh
+INFOINSTALLERSOURCE=https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/infostack-syswideinstall.sh
 
 # Dependencies
 DEPENDENCIESENABLE=false
