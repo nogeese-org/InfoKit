@@ -42,7 +42,7 @@ download_and_install() {
     fi
 
     # For user-wide installation, add it to the PATH
-    if [[ "$install_type" == "user-wide" ]]: then
+    if [[ "$install_type" == "user-wide" ]]; then
         echo "PATH=$PATH:$HOME/.infostack/bin" >> ~/.bashrc
         chmod -x "$USER_BIN"
     fi
