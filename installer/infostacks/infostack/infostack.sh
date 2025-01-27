@@ -4,7 +4,7 @@
 
 # Basic Info
 INFOTYPE=software
-INFOSOFTWARENAME=infostck
+INFOSOFTWARENAME=infostack
 INFOLATESTVERSION=0.05
 
 # Sources settings
