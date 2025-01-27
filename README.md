@@ -8,3 +8,9 @@ Manages InfoStack packages, and installs them with URLs.
 Same as InfoPac, but like traditional package managers, it installs it from a repo. 
 ## InfoOctopi (Coming soon)
 Graphical InfoStack manager.
+## Installation
+Needs CURL, run this:
+
+```
+curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh
+```
