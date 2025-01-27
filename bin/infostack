@@ -100,12 +100,32 @@ install_package() {
     local current_version
     local remote_version
     local source_url
+    local infotype
+    local sources
 
     log_message "Fetching manifest from: $manifest_url"
     temp_manifest=$(mktemp)
     curl -sSL "$manifest_url" -o "$temp_manifest"
     source "$temp_manifest"
 
+    # Check if it's a group
+    infotype="${INFOTYPE}"
+
+    if [[ "$infotype" == "group" ]]; then
+        # Handle InfoStack Group
+        log_message "Installing InfoStack group: $INFOGROUPNAME"
+
+        for source in "${INFOSTACKSSOURCES[@]}"; do
+            log_message "Processing group source: $source"
+            install_package "$source"  # Recursively call install_package to handle the sources in the group
+        done
+
+        # Group installation complete
+        log_message "InfoStack group $INFOGROUPNAME installation complete."
+        return
+    fi
+
+    # Standard package installation if it's not a group
     pkg_name="${INFOSOFTWARENAME}"
     latest_version="${INFOLATESTVERSION}"
     source_url="${INFOREPOSOURCE}"
@@ -171,6 +191,7 @@ install_package() {
 
     log_message "Installation of $pkg_name ($remote_version) completed."
 }
+
 
 install_master_package() {
     local manifest_url="$1"
