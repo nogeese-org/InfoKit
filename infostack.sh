@@ -1,4 +1,4 @@
-# InfoStack Core Script for updates.
+# InfoStack Core Source for updates.
 
 # Basic Info
 INFOTYPE=software
