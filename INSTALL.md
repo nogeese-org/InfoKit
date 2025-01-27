@@ -20,7 +20,7 @@ bash installer.sh --user
 and remove the file:
 
 ```
-rm -rf installer.sh
+rm installer.sh
 ```
 
 To do this in a chain run this:
