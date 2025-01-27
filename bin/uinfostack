@@ -10,6 +10,33 @@ log_message() {
     echo "$(date): $1" >> "$PROGRAM_DATA_DIR/log.txt"
 }
 
+get_remote_version() {
+    local manifest_url="$1"
+    local remote_version
+
+    # Download the manifest
+    temp_manifest=$(mktemp)
+    curl -sSL "$manifest_url" -o "$temp_manifest"
+
+    # Extract INFOLATESTVERSION from the manifest
+    source "$temp_manifest"
+    remote_version="${INFOLATESTVERSION}"
+
+    # Clean up
+    rm -f "$temp_manifest"
+
+    echo "$remote_version"
+}
+
+compare_versions() {
+    # Arguments: $1 = current version, $2 = new version
+    if [[ "$(echo -e "$1\n$2" | sort -V | head -n1)" == "$2" ]]; then
+        return 1  # New version is higher
+    else
+        return 0  # Current version is equal or higher
+    fi
+}
+
 install_package() {
     local manifest_url="$1"
     local pkg_name
@@ -57,6 +84,57 @@ install_package() {
     log_message "Installation of $pkg_name ($latest_version) completed."
 }
 
+update_all_packages() {
+    # Iterate over all installed packages and check for updates
+    log_message "Checking for updates for all installed packages..."
+    
+    for pkg_dir in "$PKG_DIR"/*; do
+        if [[ -d "$pkg_dir" ]]; then
+            pkg_name=$(basename "$pkg_dir")
+            echo "Checking package: $pkg_name"
+
+            # Read the manifest URL for the package from source.txt
+            if [[ -f "$pkg_dir/source.txt" ]]; then
+                manifest_url=$(cat "$pkg_dir/source.txt")
+                remote_version=$(get_remote_version "$manifest_url")
+
+                # Read current version from version.txt
+                current_version=$(cat "$pkg_dir/version.txt")
+
+                # Compare the versions
+                compare_versions "$current_version" "$remote_version"
+                if [[ $? -eq 1 ]]; then
+                    echo "Updating package: $pkg_name"
+                    install_package "$manifest_url"
+                else
+                    echo "Package $pkg_name is up to date."
+                fi
+            else
+                echo "No source.txt found for package: $pkg_name"
+            fi
+        fi
+    done
+}
+
+update_infostack() {
+    # Update infostack itself (located in the user directory)
+    log_message "Checking for update for infostack..."
+    
+    infostack_manifest_url="https://example.com/infostack-manifest.sh"  # Replace with actual URL to infostack manifest
+    remote_version=$(get_remote_version "$infostack_manifest_url")
+    
+    # Read the current version of infostack (can be stored in a file within the program/data directory)
+    current_version=$(cat "$PROGRAM_DATA_DIR/version.txt")
+
+    compare_versions "$current_version" "$remote_version"
+    if [[ $? -eq 1 ]]; then
+        echo "Updating infostack to version $remote_version"
+        install_package "$infostack_manifest_url"
+    else
+        echo "Infostack is up to date."
+    fi
+}
+
 case "$1" in
     -S)
         if [[ -n "$2" ]]; then
@@ -65,7 +143,15 @@ case "$1" in
             echo "Usage: uinfostack -S <manifest_url>"
         fi
         ;;
+    -Sy)
+        # Update all packages
+        echo "Updating all packages..."
+        update_all_packages
+        
+        # Update infostack itself
+        update_infostack
+        ;;
     *)
-        echo "Usage: uinfostack -S <manifest_url>"
+        echo "Usage: uinfostack -S <manifest_url> or uinfostack -Sy"
         ;;
 esac
