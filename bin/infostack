@@ -169,6 +169,85 @@ update_infostack() {
     fi
 }
 
+remove_package() {
+    local pkg_name="$1"
+
+    # Check if the package directory exists
+    pkg_metadata_dir="$PKG_DIR/$pkg_name"
+    if [[ ! -d "$pkg_metadata_dir" ]]; then
+        log_message "Error: Package $pkg_name not found."
+        echo "Package $pkg_name is not installed."
+        return 1
+    fi
+
+    # Remove the package files and metadata
+    log_message "Removing package: $pkg_name"
+    rm -rf "$pkg_metadata_dir"
+
+    # Optionally remove program files if they exist
+    program_files_dir="$BASE_DIR/program/files/$pkg_name"
+    if [[ -d "$program_files_dir" ]]; then
+        rm -rf "$program_files_dir"
+        log_message "Removed program files for $pkg_name."
+    fi
+
+    echo "Package $pkg_name has been removed."
+    log_message "Package $pkg_name removed successfully."
+}
+
+check_for_updates() {
+    # Check for InfoStack update
+    log_message "Checking for updates for InfoStack..."
+    if [[ -f "$MASTER_DIR/version.txt" && -f "$MASTER_DIR/source.txt" ]]; then
+        current_version=$(cat "$MASTER_DIR/version.txt")
+        manifest_url=$(cat "$MASTER_DIR/source.txt")
+        remote_version=$(get_remote_version "$manifest_url")
+        
+        compare_versions "$current_version" "$remote_version"
+        if [[ $? -eq 1 ]]; then
+            # New version is available
+            echo "InfoStack $current_version > $remote_version"
+        else
+            echo "InfoStack is up to date."
+        fi
+    else
+        echo "Metadata for InfoStack not found in $MASTER_DIR."
+    fi
+
+    # Iterate over all installed packages and check if updates are available
+    log_message "Checking for updates for all installed packages (no installation)..."
+    for pkg_dir in "$PKG_DIR"/*; do
+        if [[ -d "$pkg_dir" ]]; then
+            pkg_name=$(basename "$pkg_dir")
+
+            # Read the manifest URL for the package from source.txt
+            if [[ -f "$pkg_dir/source.txt" ]]; then
+                manifest_url=$(cat "$pkg_dir/source.txt")
+                remote_version=$(get_remote_version "$manifest_url")
+
+                # Read current version from version.txt
+                if [[ -f "$pkg_dir/version.txt" ]]; then
+                    current_version=$(cat "$pkg_dir/version.txt")
+                else
+                    current_version="0.0.0"
+                fi
+
+                # Compare the versions
+                compare_versions "$current_version" "$remote_version"
+                if [[ $? -eq 1 ]]; then
+                    # New version is available
+                    echo "$pkg_name $current_version > $remote_version"
+                else
+                    # Package is up-to-date
+                    echo "$pkg_name is up to date."
+                fi
+            else
+                echo "No source.txt found for package: $pkg_name"
+            fi
+        fi
+    done
+}
+
 case "$1" in
     -S)
         if [[ -n "$2" ]]; then
@@ -176,6 +255,11 @@ case "$1" in
         else
             echo "Usage: infostack -S <manifest_url>"
         fi
+        ;;
+    -Sy)
+        # Check for updates without installing them
+        echo "Checking for available updates..."
+        check_for_updates
         ;;
     -Syu)
         # Update all packages
@@ -185,7 +269,22 @@ case "$1" in
         # Update infostack itself
         update_infostack
         ;;
+    -R)
+        if [[ -n "$2" ]]; then
+            remove_package "$2"
+        else
+            echo "Usage: infostack -R <package_name>"
+        fi
+        ;;
+    --help)
+        echo "InfoStack Usage:"
+        echo "-S <manifest_url> - Install a package."
+        echo "-Sy - Check for updates."
+        echo "-Syu - Update all packages."
+        echo "-R <package_name> - Remove a package."
+        echo "--help - Show this message."
+        ;;
     *)
-        echo "Usage: infostack -S <manifest_url> or infostack -Syu"
+        echo "Please use a valid command or use 'infostack --help' to see all commands."
         ;;
 esac
