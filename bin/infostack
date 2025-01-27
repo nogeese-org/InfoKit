@@ -204,7 +204,7 @@ check_for_updates() {
         remote_version=$(get_remote_version "$manifest_url")
         
         compare_versions "$current_version" "$remote_version"
-        if [[ $? -eq 1 ]]; then
+        if [[ $? -eq 0 ]]; then
             # New version is available
             echo "InfoStack $current_version > $remote_version"
         else
