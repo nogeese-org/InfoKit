@@ -6,3 +6,5 @@ A new way of managing packages and programs.
 Manages InfoStack packages, and installs them with URLs.
 ## GZ
 Same as InfoPac, but like traditional package managers, it installs it from a repo. 
+## InfoOctopi (Coming soon)
+Graphical InfoStack manager.
