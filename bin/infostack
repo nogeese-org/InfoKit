@@ -177,7 +177,7 @@ case "$1" in
             echo "Usage: infostack -S <manifest_url>"
         fi
         ;;
-    -Sy)
+    -Syu)
         # Update all packages
         echo "Updating all packages..."
         update_all_packages
@@ -186,6 +186,6 @@ case "$1" in
         update_infostack
         ;;
     *)
-        echo "Usage: infostack -S <manifest_url> or infostack -Sy"
+        echo "Usage: infostack -S <manifest_url> or infostack -Syu"
         ;;
 esac
