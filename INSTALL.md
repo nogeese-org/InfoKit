@@ -28,11 +28,11 @@ To do this in a chain run this:
 For system-wide installation (requires sudo access):
 
 ```
-curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh >> installer.sh && sudo bash installer.sh --system && rm -rf installer.sh
+curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh >> installer.sh && sudo bash installer.sh --system && rm installer.sh
 ```
 
 For user-wide installation:
 
 ```
-curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh >> installer.sh && bash installer.sh --user && rm -rf installer.sh
+curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh >> installer.sh && bash installer.sh --user && rm installer.sh
 ```
