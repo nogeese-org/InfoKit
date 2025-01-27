@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# InfoKit Core Source for updates.
+# InfoStack Core Source for updates.
 
 # Basic Info
 INFOTYPE=software
-INFOSOFTWARENAME=infokit
-INFOLATESTVERSION=0.04
+INFOSOFTWARENAME=infostck
+INFOLATESTVERSION=0.05
 
 # Sources settings
 INFOINSTALLABLE=true
