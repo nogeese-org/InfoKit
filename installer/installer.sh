@@ -41,6 +41,12 @@ download_and_install() {
         sudo chmod +x "$SYSTEM_BIN"
     fi
 
+    # For user-wide installation, add it to the PATH
+    if [[ "$install_type" == "user-wide" ]]: then
+        echo "PATH=$PATH:$HOME/.infostack/bin" >> ~/.bashrc
+        chmod -x "$USER_BIN"
+    fi
+
     echo "InfoStack ($install_type) installed successfully!"
 }
 
