@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Constants for system-wide paths
+BASE_DIR="/usr/infostack"
+PKG_DIR="$BASE_DIR/pkg"
+PROGRAM_DATA_DIR="$BASE_DIR/program/data"
+MASTER_DIR="$BASE_DIR/master"
+
+log_message() {
+    echo "$(date): $1" >> "$MASTER_DIR/log.txt"
+}
+
+install_package() {
+    local manifest_url="$1"
+    local pkg_name
+    local latest_version
+
+    log_message "Fetching manifest from: $manifest_url"
+    temp_manifest=$(mktemp)
+    curl -sSL "$manifest_url" -o "$temp_manifest"
+    source "$temp_manifest"
+
+    pkg_name="${INFOSOFTWARENAME}"
+    latest_version="${INFOLATESTVERSION}"
+
+    pkg_metadata_dir="$PKG_DIR/$pkg_name"
+    mkdir -p "$pkg_metadata_dir"
+
+    log_message "Resolving dependencies for $pkg_name..."
+    for dep in "${DEPENDENCIES[@]}"; do
+        IFS=: read -r source_type source <<< "$dep"
+        case "$source_type" in
+            infopac) infopac -S "$source" ;;
+            gz) gz -S "$source" ;;
+            pacman) sudo pacman -S --needed --noconfirm "$source" ;;
+            manual)
+                echo "Please follow manual dependency instructions: $source"
+                ;;
+            *) echo "Unknown dependency type: $source_type" ;;
+        esac
+    done
+
+    if [[ "$INFOINSTALLABLE" == "true" ]]; then
+        temp_installer=$(mktemp)
+        curl -sSL "$INFOINSTALLERSOURCE" -o "$temp_installer"
+        chmod +x "$temp_installer"
+        bash "$temp_installer"
+        rm -f "$temp_installer"
+    fi
+
+    echo "$manifest_url" > "$pkg_metadata_dir/source.txt"
+    echo "$latest_version" > "$pkg_metadata_dir/version.txt"
+    cp "$temp_manifest" "$pkg_metadata_dir/infostack.sh"
+    rm -f "$temp_manifest"
+
+    log_message "Installation of $pkg_name ($latest_version) completed."
+}
+
+case "$1" in
+    -S)
+        if [[ -n "$2" ]]; then
+            install_package "$2"
+        else
+            echo "Usage: infostack -S <manifest_url>"
+        fi
+        ;;
+    *)
+        echo "Usage: infostack -S <manifest_url>"
+        ;;
+esac
