@@ -283,9 +283,10 @@ case "$1" in
         echo "-Syu - Update all packages."
         echo "-R <package_name> - Remove a package."
         echo "--help - Show this message."
+        echo "--version - Show your InfoStack version."
         ;;
-    --help)
-        echo "InfoStack Version $(cat /usr/infostack/master/version.txt)"
+    --version)
+        echo "InfoStack version $(cat /usr/infostack/master/version.txt)"
         ;;
     *)
         echo "Please use a valid command or use 'infostack --help' to see all commands."
