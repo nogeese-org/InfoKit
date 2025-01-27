@@ -12,5 +12,5 @@ Graphical InfoStack manager.
 Needs CURL, run this:
 
 ```
-curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh
+curl -sSL https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/installer.sh | sudo bash
 ```
