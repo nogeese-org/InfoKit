@@ -4,7 +4,7 @@
 
 # Basic Info
 INFOTYPE=software
-INFOSOFTWARENAME=org.neocities-leon8326.Nogeese.InfoStack.core0
+INFOSOFTWARENAME=core
 INFOLATESTVERSION=0
 
 # Sources settings
