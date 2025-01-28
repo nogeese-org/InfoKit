@@ -5,7 +5,7 @@
 # Basic Info
 INFOTYPE=software
 INFOSOFTWARENAME=infokit-corestack
-INFOLATESTVERSION=0.06
+INFOLATESTVERSION=0
 
 # Sources settings
 INFOINSTALLABLE=true
