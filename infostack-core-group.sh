@@ -15,7 +15,7 @@ INFOSTACKSENABLE=true
 INFOSTACKSSOURCES=(
 
 "https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/infostack.sh"
-"https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/infostacks/infostack-core0/infostack.sh"
+"https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/infostacks/infostack-core/infostack.sh"
 
 )
 
