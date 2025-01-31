@@ -13,4 +13,6 @@ Graphical InfoStack manager.
 
 ## License
 
+![License: Nogeese Public License 1.0](https://img.shields.io/badge/license-Nogeese_Public_License_1.0-blue.svg)
+
 This project is licensed under the **Nogeese Public License 1.0** - see the [LICENSE](LICENSE) file for details.
