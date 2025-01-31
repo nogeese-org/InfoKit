@@ -10,3 +10,7 @@ Same as InfoPac, but like traditional package managers, it installs it from a re
 Graphical InfoStack manager.
 ## Installation
 [Click Here for installation instructions.](https://github.com/leon8326-nogeese/InfoKit/blob/main/INSTALL.md)
+
+## License
+
+This project is licensed under the **Nogeese Public License 1.0** - see the [LICENSE](LICENSE) file for details.
