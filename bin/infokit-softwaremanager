@@ -216,7 +216,7 @@ remove_package() {
 
     # Special case: if removing the system-wide InfoKit Software Manager (infostack)
     if [[ "$pkg_name" == "infostack" ]]; then
-        echo "Removing system-wide InfoKit Software Manager..."
+        echo "Removing system-wide InfoStack..."
         sudo rm -rf /usr/infostack
         sudo rm -f /usr/bin/infostack
         log_message "System-wide InfoKit Software Manager removed from /usr/infostack and /usr/bin/infostack."
