@@ -1,0 +1,297 @@
+#!/bin/bash
+
+# Constants for system-wide paths (updated)
+BASE_DIR="/usr/infokit/softwaremanager"
+PKG_DIR="$BASE_DIR/pkg"
+PROGRAM_DATA_DIR="$BASE_DIR/program/data"
+MASTER_DIR="$BASE_DIR/master"
+
+# Define allowed package names and their manifest URLs.
+declare -A PACKAGE_MANIFESTS=(
+    ["infostack"]="https://raw.githubusercontent.com/leon8326-nogeese/InfoKit/main/installer/infostack-syswideinstall.sh"
+    ["example"]="https://example.com/example-manifest.sh"
+)
+
+log_message() {
+    echo "$(date): $1" >> "$MASTER_DIR/log.txt"
+}
+
+# Function to fetch INFOLATESTVERSION from a remote URL
+get_remote_version() {
+    local manifest_url="$1"
+    local remote_version
+
+    # Download the manifest
+    temp_manifest=$(mktemp)
+    curl -sSL "$manifest_url" -o "$temp_manifest"
+
+    # Extract INFOLATESTVERSION from the manifest
+    source "$temp_manifest"
+    remote_version="${INFOLATESTVERSION}"
+
+    # Clean up
+    rm -f "$temp_manifest"
+
+    echo "$remote_version"
+}
+
+# Function to compare versions
+compare_versions() {
+    # Arguments: $1 = current version, $2 = new version
+    if [[ "$(echo -e "$1\n$2" | sort -V | head -n1)" == "$2" ]]; then
+        return 1  # New version is higher
+    else
+        return 0  # Current version is equal or higher
+    fi
+}
+
+install_package() {
+    local manifest_url="$1"
+    local pkg_name
+    local latest_version
+    local current_version
+    local remote_version
+    local source_url
+    local infotype
+    local sources
+
+    log_message "Fetching manifest from: $manifest_url"
+    temp_manifest=$(mktemp)
+    curl -sSL "$manifest_url" -o "$temp_manifest"
+    source "$temp_manifest"
+
+    # Check if it's a group installation
+    infotype="${INFOTYPE}"
+    if [[ "$infotype" == "group" ]]; then
+        log_message "Installing InfoKit Software Manager group: $INFOGROUPNAME"
+        for source in "${INFOSTACKSSOURCES[@]}"; do
+            log_message "Processing group source: $source"
+            install_package "$source"  # Recursively process each source
+        done
+        log_message "InfoKit Software Manager group $INFOGROUPNAME installation complete."
+        return
+    fi
+
+    # Standard package installation for non-group packages
+    pkg_name="${INFOSOFTWARENAME}"
+    latest_version="${INFOLATESTVERSION}"
+    source_url="${INFOREPOSOURCE}"
+
+    pkg_metadata_dir="$PKG_DIR/$pkg_name"
+    mkdir -p "$pkg_metadata_dir"
+
+    if [[ -f "$pkg_metadata_dir/version.txt" ]]; then
+        current_version=$(cat "$pkg_metadata_dir/version.txt")
+    else
+        current_version="0.0.0"  # First installation
+    fi
+
+    if [[ -f "$pkg_metadata_dir/source.txt" ]]; then
+        source_url=$(cat "$pkg_metadata_dir/source.txt")
+    else
+        log_message "Error: source.txt not found for $pkg_name"
+        rm -f "$temp_manifest"
+        return 1
+    fi
+
+    remote_version=$(get_remote_version "$source_url")
+
+    compare_versions "$current_version" "$remote_version"
+    if [[ $? -eq 1 ]]; then
+        log_message "Update found for $pkg_name! Current version: $current_version, Remote version: $remote_version"
+    else
+        log_message "No update needed for $pkg_name. (Current version: $current_version, Remote version: $remote_version)"
+        rm -f "$temp_manifest"
+        return
+    fi
+
+    log_message "Resolving dependencies for $pkg_name..."
+    for dep in "${DEPENDENCIES[@]}"; do
+        IFS=: read -r source_type source <<< "$dep"
+        case "$source_type" in
+            infopac) infopac -S "$source" ;;
+            gz) gz -S "$source" ;;
+            pacman) sudo pacman -S --needed --noconfirm "$source" ;;
+            manual)
+                echo "Please follow manual dependency instructions: $source"
+                ;;
+            *) echo "Unknown dependency type: $source_type" ;;
+        esac
+    done
+
+    if [[ "$INFOINSTALLABLE" == "true" ]]; then
+        temp_installer=$(mktemp)
+        curl -sSL "$INFOINSTALLERSOURCE" -o "$temp_installer"
+        chmod +x "$temp_installer"
+        bash "$temp_installer"
+        rm -f "$temp_installer"
+    fi
+
+    # Save new version and source details
+    echo "$source_url" > "$pkg_metadata_dir/source.txt"
+    echo "$remote_version" > "$pkg_metadata_dir/version.txt"
+    cp "$temp_manifest" "$pkg_metadata_dir/infostack.sh"
+    rm -f "$temp_manifest"
+
+    log_message "Installation of $pkg_name (version $remote_version) completed."
+}
+
+install_master_package() {
+    local manifest_url="$1"
+    local pkg_name
+    local latest_version
+    local current_version
+    local remote_version
+    local source_url
+
+    log_message "Fetching manifest from: $manifest_url"
+    temp_manifest=$(mktemp)
+    curl -sSL "$manifest_url" -o "$temp_manifest"
+    source "$temp_manifest"
+
+    pkg_name="${INFOSOFTWARENAME}"
+    latest_version="${INFOLATESTVERSION}"
+    source_url="${INFOREPOSOURCE}"
+
+    pkg_metadata_dir="$MASTER_DIR"
+    mkdir -p "$pkg_metadata_dir"
+
+    if [[ -f "$pkg_metadata_dir/version.txt" ]]; then
+        current_version=$(cat "$pkg_metadata_dir/version.txt")
+    else
+        current_version="0.0.0"
+    fi
+
+    if [[ -f "$pkg_metadata_dir/source.txt" ]]; then
+        source_url=$(cat "$pkg_metadata_dir/source.txt")
+    else
+        log_message "Error: source.txt not found for $pkg_name"
+        rm -f "$temp_manifest"
+        return 1
+    fi
+
+    remote_version=$(get_remote_version "$source_url")
+
+    compare_versions "$current_version" "$remote_version"
+    if [[ $? -eq 1 ]]; then
+        log_message "Update found for $pkg_name! Current version: $current_version, Remote version: $remote_version"
+    else
+        log_message "No update needed for $pkg_name. (Current version: $current_version, Remote version: $remote_version)"
+        rm -f "$temp_manifest"
+        return
+    fi
+
+    log_message "Resolving dependencies for $pkg_name..."
+    for dep in "${DEPENDENCIES[@]}"; do
+        IFS=: read -r source_type source <<< "$dep"
+        case "$source_type" in
+            infopac) infopac -S "$source" ;;
+            gz) gz -S "$source" ;;
+            pacman) sudo pacman -S --needed --noconfirm "$source" ;;
+            manual)
+                echo "Please follow manual dependency instructions: $source"
+                ;;
+            *) echo "Unknown dependency type: $source_type" ;;
+        esac
+    done
+
+    if [[ "$INFOINSTALLABLE" == "true" ]]; then
+        temp_installer=$(mktemp)
+        curl -sSL "$INFOINSTALLERSOURCE" -o "$temp_installer"
+        chmod +x "$temp_installer"
+        bash "$temp_installer"
+        rm -f "$temp_installer"
+    fi
+
+    echo "$source_url" > "$pkg_metadata_dir/source.txt"
+    echo "$remote_version" > "$pkg_metadata_dir/version.txt"
+    cp "$temp_manifest" "$pkg_metadata_dir/infostack.sh"
+    rm -f "$temp_manifest"
+
+    log_message "Installation of $pkg_name (version $remote_version) completed."
+}
+
+remove_package() {
+    local pkg_name="$1"
+
+    # Special case: if removing the system-wide InfoKit Software Manager (infostack)
+    if [[ "$pkg_name" == "infostack" ]]; then
+        echo "Removing system-wide InfoKit Software Manager..."
+        sudo rm -rf /usr/infostack
+        sudo rm -f /usr/bin/infostack
+        log_message "System-wide InfoKit Software Manager removed from /usr/infostack and /usr/bin/infostack."
+        return 0
+    fi
+
+    # Otherwise, remove package metadata from the software manager's directory
+    pkg_metadata_dir="$PKG_DIR/$pkg_name"
+    if [[ ! -d "$pkg_metadata_dir" ]]; then
+        log_message "Error: Package $pkg_name not found."
+        echo "Package $pkg_name is not installed."
+        return 1
+    fi
+
+    log_message "Removing package: $pkg_name"
+    rm -rf "$pkg_metadata_dir"
+
+    program_files_dir="$BASE_DIR/program/files/$pkg_name"
+    if [[ -d "$program_files_dir" ]]; then
+        rm -rf "$program_files_dir"
+        log_message "Removed program files for $pkg_name."
+    fi
+
+    echo "Package $pkg_name has been removed."
+    log_message "Package $pkg_name removed successfully."
+}
+
+print_help() {
+    echo "InfoKit Software Manager Usage:"
+    echo "  -S <package_name>   Install a package."
+    echo "                      (Special case: -S infostack runs the system-wide installer)"
+    echo "  -R <package_name>   Remove a package."
+    echo "  --help              Show this message."
+}
+
+case "$1" in
+    -S)
+        if [[ -n "$2" ]]; then
+            # Reject parameters that look like URLs.
+            if [[ "$2" =~ ^https?:// ]]; then
+                echo "Error: Please specify a valid package name, not a URL."
+                exit 1
+            fi
+
+            if [[ -z "${PACKAGE_MANIFESTS[$2]}" ]]; then
+                echo "Error: Unknown package name: $2"
+                exit 1
+            fi
+
+            if [[ "$2" == "infostack" ]]; then
+                # Special branch: run the system-wide installer.
+                curl -sSL "${PACKAGE_MANIFESTS[infostack]}" | sudo bash
+                exit 0
+            else
+                manifest_url="${PACKAGE_MANIFESTS[$2]}"
+                install_package "$manifest_url"
+            fi
+        else
+            echo "Usage: infokit-softwaremanager -S <package_name>"
+            exit 1
+        fi
+        ;;
+    -R)
+        if [[ -n "$2" ]]; then
+            remove_package "$2"
+        else
+            echo "Usage: infokit-softwaremanager -R <package_name>"
+            exit 1
+        fi
+        ;;
+    --help)
+        print_help
+        ;;
+    *)
+        print_help
+        exit 1
+        ;;
+esac
