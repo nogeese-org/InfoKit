@@ -2,6 +2,8 @@
 Nogeese InfoKit is a management kit with lots of features and Nogeese Linux will come with it preinstalled.
 ### InfoStack
 A new way of managing packages and programs.
+### UInfoStack
+InfoStack modification that contains apps inside their own Program Files Folders, kinda like Flatpak or Snap.
 ### InfoPac
 Manages InfoStack packages, and installs them with URLs.
 ### GZ
