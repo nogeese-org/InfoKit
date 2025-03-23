@@ -3,7 +3,7 @@
 Please have sudo access and run this:
 
 ```
-curl -sSL https://archive.leon8326.org/software/infostack/install.sh | sudo bash
+curl -sSL https://archive.leon8326.org/software/infokit/install.sh | sudo bash
 ```
 
 ## InfoStack
